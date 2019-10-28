@@ -3,11 +3,13 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"math"
+	"net/http"
 	"os"
 	"reflect"
 	"regexp"
@@ -105,25 +107,11 @@ type (
 )
 
 func main() {
-	var ep, token string
-	if len(os.Args) == 2 {
-		ep = os.Args[1]
-		token = os.Args[2]
-	}
-
-	if ep == "" {
-		ep = os.Getenv("ENDPOINT")
-	}
-	if token == "" {
-		token = os.Getenv("TOKEN")
-	}
-
-	if ep == "" || token == "" {
-		panic("need endpoint and token as args or from env ($ENDPOINT, $TOKEN)")
-	}
-
 	var err error
-	client, err = sophos.New(ep, sophos.WithAPIToken(token))
+
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
+	client, err = sophos.New(os.Getenv("TF_VAR_utm_api_endpoint"), sophos.WithBasicAuth(os.Getenv("TF_VAR_utm_api_user"), os.Getenv("TF_VAR_utm_api_password")))
 	if err != nil {
 		log.Fatal(err)
 	}
